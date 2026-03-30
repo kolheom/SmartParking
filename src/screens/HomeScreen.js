@@ -6,15 +6,19 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, StatusBar, ActivityIndicator,
+  ScrollView, StatusBar, ActivityIndicator, Image,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { loadOccupied } from "../storage/BookingStorage";
 import { buildParkingTree, countFreeSlots } from "../algorithms/tree";
 import { COLORS } from "../data/parkingData";
+import { useAuth } from "../context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function HomeScreen({ navigation }) {
   const [free, setFree] = useState({ twoWheeler: 0, fourWheeler: 0 });
   const [loading, setLoading] = useState(true);
+  const { logout, user } = useAuth();
 
   // Refresh counts every time this screen is focused
   useEffect(() => {
@@ -63,146 +67,206 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="#030810" />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Hero */}
-        <View style={styles.hero}>
-          <View style={styles.logoBox}>
-            <Text style={styles.logoText}>🅿</Text>
-          </View>
-          <Text style={styles.heroTitle}>SMART PARKING</Text>
-          <Text style={styles.heroSub}>
-            Dijkstra · Graph · Tree Structure
-          </Text>
-        </View>
-
-        {/* Availability Cards */}
-        <View style={styles.statsRow}>
-          <StatCard
-            icon="🛵"
-            label="Two Wheeler"
-            count={loading ? "—" : free.twoWheeler}
-            color={COLORS.accent2W}
+        {/* Modern Hero Header */}
+        <View style={styles.headerContainer}>
+          <Image
+            source={require("../../assets/home_hero.png")}
+            style={styles.heroImage}
+            resizeMode="cover"
           />
-          <StatCard
-            icon="🚗"
-            label="Four Wheeler"
-            count={loading ? "—" : free.fourWheeler}
-            color={COLORS.accent4W}
+          <LinearGradient
+            colors={["transparent", COLORS.bg]}
+            style={styles.heroOverlay}
           />
-        </View>
-
-        {loading && <ActivityIndicator color={COLORS.path} style={{ marginBottom: 20 }} />}
-
-        {/* Menu */}
-        <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
-        {menuItems.map((item) => (
-          <TouchableOpacity
-            key={item.screen}
-            onPress={() => navigation.navigate(item.screen)}
-            activeOpacity={0.8}
-            style={[styles.menuRow, { borderColor: `${item.color}33` }]}
-          >
-            <Text style={styles.menuIcon}>{item.icon}</Text>
-            <View style={styles.menuText}>
-              <Text style={[styles.menuLabel, { color: item.color }]}>{item.label}</Text>
-              <Text style={styles.menuSub}>{item.sub}</Text>
-            </View>
-            <Text style={[styles.arrow, { color: `${item.color}88` }]}>›</Text>
-          </TouchableOpacity>
-        ))}
-
-        {/* Algo info */}
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>How it works</Text>
-          {[
-            ["🌳", "Tree", "Parking hierarchy: Root → Section → Zone → Slot"],
-            ["🕸", "Graph", "Weighted edges connect zones to entrance"],
-            ["⚡", "Dijkstra", "Finds nearest empty slot via shortest path"],
-          ].map(([icon, title, desc]) => (
-            <View key={title} style={styles.infoRow}>
-              <Text style={styles.infoIcon}>{icon}</Text>
+          <View style={styles.headerContent}>
+            <View style={styles.userRow}>
               <View>
-                <Text style={styles.infoLabel}>{title}</Text>
-                <Text style={styles.infoDesc}>{desc}</Text>
+                <Text style={styles.greeting}>Good Morning,</Text>
+                <Text style={styles.userName}>{user?.username || "Driver"}</Text>
               </View>
+              <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+                <Ionicons name="log-out-outline" size={24} color={COLORS.text} />
+              </TouchableOpacity>
             </View>
-          ))}
+          </View>
+        </View>
+
+        <View style={styles.contentPadding}>
+          {/* Availability Dashboard */}
+          <Text style={styles.sectionTitle}>PARKING AVAILABILITY</Text>
+          <View style={styles.statsRow}>
+            <StatCard
+              icon="🛵"
+              label="Two Wheeler"
+              count={loading ? "—" : free.twoWheeler}
+              color={COLORS.accent2W}
+              gradient={["#083344", "#0e7490"]}
+            />
+            <StatCard
+              icon="🚗"
+              label="Four Wheeler"
+              count={loading ? "—" : free.fourWheeler}
+              color={COLORS.accent4W}
+              gradient={["#431407", "#9a3412"]}
+            />
+          </View>
+
+          {loading && <ActivityIndicator color={COLORS.path} style={{ marginBottom: 20 }} />}
+
+          {/* Quick Actions */}
+          <Text style={styles.sectionTitle}>QUICK ACCESS</Text>
+          <View style={styles.menuContainer}>
+            {menuItems.map((item) => (
+              <TouchableOpacity
+                key={item.screen}
+                onPress={() => navigation.navigate(item.screen)}
+                activeOpacity={0.7}
+                style={styles.menuItem}
+              >
+                <LinearGradient
+                  colors={["rgba(255,255,255,0.05)", "rgba(255,255,255,0.02)"]}
+                  style={styles.menuGradient}
+                >
+                  <View style={[styles.menuIconBox, { backgroundColor: `${item.color}22` }]}>
+                    <Text style={styles.menuIcon}>{item.icon}</Text>
+                  </View>
+                  <View style={styles.menuText}>
+                    <Text style={styles.menuLabel}>{item.label}</Text>
+                    <Text style={styles.menuSubText}>{item.sub}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </View>
   );
 }
 
-function StatCard({ icon, label, count, color }) {
+function StatCard({ icon, label, count, color, gradient }) {
   return (
-    <View style={[styles.statCard, { borderColor: `${color}44` }]}>
+    <LinearGradient colors={gradient} style={styles.statCard}>
       <Text style={styles.statIcon}>{icon}</Text>
-      <Text style={[styles.statCount, { color }]}>{count}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statSub, { color: `${color}88` }]}>slots free</Text>
-    </View>
+      <View style={styles.statInfo}>
+        <Text style={styles.statCount}>{count}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+        <Text style={styles.statSub}>Available</Text>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.bg },
-  scroll: { padding: 20, paddingBottom: 40 },
+  scroll: { flex: 1 },
+  contentPadding: { paddingHorizontal: 20, paddingBottom: 40 },
 
-  // Hero
-  hero: { alignItems: "center", marginBottom: 28, marginTop: 8 },
-  logoBox: {
-    width: 72, height: 72, borderRadius: 20,
-    backgroundColor: "#0a1f35", borderWidth: 2, borderColor: `${COLORS.accent2W}44`,
-    alignItems: "center", justifyContent: "center", marginBottom: 16,
+  // Header
+  headerContainer: {
+    height: 240,
+    width: "100%",
+    position: "relative",
   },
-  logoText: { fontSize: 34 },
-  heroTitle: {
-    fontSize: 26, fontWeight: "800", color: COLORS.text,
-    letterSpacing: 6, marginBottom: 6,
+  heroImage: {
+    width: "100%",
+    height: "100%",
   },
-  heroSub: { fontSize: 11, color: COLORS.muted, fontFamily: "monospace", letterSpacing: 2 },
+  heroOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 150,
+  },
+  headerContent: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    paddingTop: 40,
+  },
+  userRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  greeting: {
+    color: COLORS.textDim,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  userName: {
+    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+  logoutBtn: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    padding: 10,
+    borderRadius: 12,
+  },
+
+  // Section
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: COLORS.textDim,
+    letterSpacing: 2,
+    marginBottom: 15,
+    marginTop: 10,
+  },
 
   // Stats
-  statsRow: { flexDirection: "row", gap: 12, marginBottom: 28 },
+  statsRow: { flexDirection: "row", gap: 15, marginBottom: 30 },
   statCard: {
-    flex: 1, backgroundColor: "#060f1c", borderRadius: 14, borderWidth: 1,
-    padding: 18, alignItems: "center",
+    flex: 1,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  statIcon: { fontSize: 28, marginBottom: 8 },
-  statCount: { fontSize: 36, fontWeight: "800", fontFamily: "monospace" },
-  statLabel: { fontSize: 12, fontWeight: "700", color: COLORS.text, marginTop: 4 },
-  statSub: { fontSize: 11, fontFamily: "monospace", marginTop: 2 },
+  statIcon: { fontSize: 32 },
+  statInfo: { flex: 1 },
+  statCount: { fontSize: 24, fontWeight: "900", color: "#fff" },
+  statLabel: { fontSize: 13, fontWeight: "700", color: "rgba(255,255,255,0.9)" },
+  statSub: { fontSize: 10, color: "rgba(255,255,255,0.6)", fontWeight: "600", textTransform: "uppercase" },
 
-  // Menu
-  sectionLabel: {
-    fontSize: 10, fontFamily: "monospace", letterSpacing: 4,
-    color: COLORS.muted, marginBottom: 12, fontWeight: "700",
+  // Menu List
+  menuContainer: { gap: 12 },
+  menuItem: {
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
   },
-  menuRow: {
-    flexDirection: "row", alignItems: "center", gap: 14,
-    backgroundColor: "#060f1c", borderRadius: 12, borderWidth: 1,
-    padding: 16, marginBottom: 10,
+  menuGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    paddingRight: 10,
   },
-  menuIcon: { fontSize: 26 },
+  menuIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  menuIcon: { fontSize: 24 },
   menuText: { flex: 1 },
-  menuLabel: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
-  menuSub: { fontSize: 11, color: COLORS.muted },
-  arrow: { fontSize: 28, marginRight: 4 },
-
-  // Info
-  infoBox: {
-    backgroundColor: "#060f1c", borderRadius: 14,
-    borderWidth: 1, borderColor: COLORS.border,
-    padding: 18, marginTop: 20,
-  },
-  infoTitle: {
-    fontSize: 12, fontFamily: "monospace", letterSpacing: 3,
-    color: COLORS.muted, marginBottom: 14, fontWeight: "600",
-  },
-  infoRow: { flexDirection: "row", gap: 12, marginBottom: 12, alignItems: "flex-start" },
-  infoIcon: { fontSize: 20, width: 28 },
-  infoLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textDim, fontFamily: "monospace" },
-  infoDesc: { fontSize: 11, color: COLORS.muted, marginTop: 2, lineHeight: 16 },
+  menuLabel: { fontSize: 16, fontWeight: "700", color: COLORS.text, marginBottom: 2 },
+  menuSubText: { fontSize: 12, color: COLORS.textDim },
 });

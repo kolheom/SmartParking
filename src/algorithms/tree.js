@@ -10,7 +10,7 @@ export class SlotNode {
   constructor(id, label, type = "slot", parentId = null) {
     this.id = id;
     this.label = label;
-    this.type = type;       // "root" | "section" | "subsection" | "slot"
+    this.type = type; // "root" | "section" | "subsection" | "slot"
     this.parentId = parentId;
     this.children = [];
     this.isOccupied = false;
