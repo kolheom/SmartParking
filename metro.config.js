@@ -23,7 +23,11 @@ config.resolver.sourceExts = [
   "tsx",
   "json",
   "svg",
+  "cjs",
+  "mjs",
 ];
+
+config.resolver.unstable_enablePackageExports = true;
 
 // ── 3. Transformer: Stable & Aggressive Caching ───────────────
 // Persist the Metro transform cache across restarts.
